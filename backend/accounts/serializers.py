@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate
 from .models import UserProfile, PasswordResetOTP
 import random
 from .Utils import send_email
+from django.contrib.auth import password_validation
 
 CustomUser = get_user_model()
 
@@ -134,3 +135,40 @@ class PasswordResetSerializer(serializers.Serializer):
         # Mark the OTP as used
         otp_record.is_used = True
         otp_record.save()
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    confirm_new_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate(self, data):
+        """
+        Check that the new password and confirm password match.
+        """
+        if data['new_password'] != data['confirm_new_password']:
+            raise serializers.ValidationError("The two new passwords do not match.")
+        if data['new_password'] == data['old_password']:
+            raise serializers.ValidationError("Old and New Password are same")
+        return data
+
+    def validate_new_password(self, value):
+        """
+        Validate the new password against Django's built-in password validators.
+        """
+        password_validation.validate_password(value, self.context['request'].user)
+        return value
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+
+
