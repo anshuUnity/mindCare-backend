@@ -90,3 +90,17 @@ class UserProfile(models.Model):
         verbose_name = _("User Profile")
         verbose_name_plural = _("User Profiles")
         db_table = "userprofile"
+
+
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"OTP for {self.user.email} - {'Used' if self.is_used else 'Unused'}"
+    
+    class Meta:
+        db_table = "usermeta"
+

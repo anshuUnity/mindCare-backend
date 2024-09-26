@@ -2,7 +2,9 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
-from .models import UserProfile
+from .models import UserProfile, PasswordResetOTP
+import random
+from .Utils import send_email
 
 CustomUser = get_user_model()
 
@@ -65,3 +67,70 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['date_of_birth', 'gender', 'phone_number', 'profile_picture', 'bio']
         read_only_fields = ['user']
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            user = CustomUser.objects.get(email=value)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("User with this email does not exist.")
+        return value
+
+    def save(self):
+        email = self.validated_data['email']
+        user = CustomUser.objects.get(email=email)
+        otp = f"{random.randint(100000, 999999)}"
+
+        # Send the OTP via email
+        # For demonstration purposes, we'll use Django's email backend
+        # In production, use a proper email service
+
+        status = send_email(
+            subject="Mindcare Password Reset OTP",
+            message=f"Your OTP for password reset is: {otp}",
+            recipient_list=[email]
+        )
+        if status == 1:
+            PasswordResetOTP.objects.create(user=user, otp=otp)
+
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        try:
+            user = CustomUser.objects.get(email=data['email'])
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError("Invalid email address.")
+
+        try:
+            otp_record = PasswordResetOTP.objects.get(user=user, otp=data['otp'], is_used=False)
+        except PasswordResetOTP.DoesNotExist:
+            raise serializers.ValidationError("Invalid OTP.")
+
+        # Check if OTP has expired (optional, e.g., valid for 10 minutes)
+        # if timezone.now() > otp_record.created_at + timedelta(minutes=10):
+        #     raise serializers.ValidationError("OTP has expired.")
+
+        data['user'] = user
+        data['otp_record'] = otp_record
+        return data
+
+    def save(self):
+        user = self.validated_data['user']
+        otp_record = self.validated_data['otp_record']
+        new_password = self.validated_data['new_password']
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        # Mark the OTP as used
+        otp_record.is_used = True
+        otp_record.save()

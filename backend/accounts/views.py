@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from .serializers import UserSignupSerializer, UserLoginSerializer, UserProfileSerializer
+from .serializers import UserSignupSerializer, UserLoginSerializer, UserProfileSerializer, PasswordResetRequestSerializer, PasswordResetSerializer
 from .token_auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
@@ -112,3 +112,30 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         Override the get_object method to return the profile of the authenticated user.
         """
         return get_object_or_404(UserProfile, user=self.request.user)
+    
+
+
+class PasswordResetRequestView(generics.CreateAPIView):
+    """
+    Handles the request to send a password reset OTP to the user's email.
+    """
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "OTP has been sent to your email."}, status=status.HTTP_200_OK)
+
+class PasswordResetView(generics.CreateAPIView):
+    """
+    Handles the request to reset the password using the OTP.
+    """
+    serializer_class = PasswordResetSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Your password has been reset successfully."}, status=status.HTTP_200_OK)
+
