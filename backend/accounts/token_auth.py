@@ -49,6 +49,10 @@ class TokenAuthentication(BaseAuthentication):
         """
         Generate JWT for a given user and store it in the database.
         """
+
+        # Deactivate all previous tokens for this user
+        Token.objects.filter(user=user, is_active=True).update(is_active=False)
+
         expiration = timezone.now() + datetime.timedelta(days=1)
         payload = {
             'user_id': str(user.id),
