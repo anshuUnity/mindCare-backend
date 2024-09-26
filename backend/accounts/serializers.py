@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
+from .models import UserProfile
 
 CustomUser = get_user_model()
 
@@ -58,3 +59,9 @@ class UserLoginSerializer(serializers.Serializer):
 
         data['user'] = user
         return data
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['date_of_birth', 'gender', 'phone_number', 'profile_picture', 'bio']
+        read_only_fields = ['user']

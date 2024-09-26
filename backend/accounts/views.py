@@ -2,9 +2,26 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from .serializers import UserSignupSerializer, UserLoginSerializer
+from .serializers import UserSignupSerializer, UserLoginSerializer, UserProfileSerializer
 from .token_auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics
+from .models import UserProfile
+from django.shortcuts import get_object_or_404
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    """
+    View to retrieve and update the authenticated user's profile.
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """
+        Override the get_object method to return the profile of the authenticated user.
+        """
+        return get_object_or_404(UserProfile, user=self.request.user)
+
 
 class UserSignupView(APIView):
     """
@@ -80,3 +97,18 @@ class DummyView(APIView):
         - A JSON response containing a success message.
         """
         return Response({'message': 'Authenticated successfully!'}, status=status.HTTP_200_OK)
+    
+
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    """
+    View to retrieve and update the authenticated user's profile.
+    """
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        """
+        Override the get_object method to return the profile of the authenticated user.
+        """
+        return get_object_or_404(UserProfile, user=self.request.user)
