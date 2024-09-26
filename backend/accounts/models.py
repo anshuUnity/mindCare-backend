@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -63,3 +64,29 @@ class Token(models.Model):
 
     def has_expired(self):
         return timezone.now() > self.expires_at
+    
+
+class UserProfile(models.Model):
+    """
+    A model to store additional information about the user.
+    """
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    ]
+
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+    date_of_birth = models.DateField(_("Date of Birth"), null=True, blank=True)
+    gender = models.CharField(_("Gender"), max_length=1, choices=GENDER_CHOICES, blank=True)
+    phone_number = models.CharField(_("Phone Number"), max_length=15, blank=True)
+    profile_picture = models.ImageField(_("Profile Picture"), upload_to='profile_pictures/', blank=True, null=True)
+    bio = models.TextField(_("Bio"), blank=True)
+
+    def __str__(self):
+        return f"{self.user.email}'s profile"
+
+    class Meta:
+        verbose_name = _("User Profile")
+        verbose_name_plural = _("User Profiles")
+        db_table = "userprofile"

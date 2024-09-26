@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import CustomUser, Token
+from .models import CustomUser, Token, UserProfile
 
 class UserAdmin(BaseUserAdmin):
     ordering = ['email']
@@ -28,3 +28,11 @@ class TokenAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'created_at', 'expires_at', 'is_active')
     search_fields = ('user__email',)
     list_filter = ('is_active', 'expires_at')
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'date_of_birth', 'gender', 'phone_number')
+    search_fields = ('user__email', 'phone_number')
+    list_filter = ('gender',)
+
