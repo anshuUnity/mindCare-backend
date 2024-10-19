@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-+42z$dcv8=arq*wau^1=%c!nmp(0li0b@f)#2e&z!nay8)ycx4"
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG")
 
 ALLOWED_HOSTS = []
 
@@ -88,15 +89,19 @@ REST_FRAMEWORK = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'mindcare',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',  # For local development, use 'localhost'. For production, this will be your DB server.
-        'PORT': '3306',  # Default MySQL port
+        'ENGINE': config('ENGINE'),
+        'NAME': config('NAME'),
+        'USER': config('USER'),
+        'PASSWORD': config('PASSWORD'),
+        'HOST': config('HOST'),  # For local development, use 'localhost'. For production, this will be your DB server.
+        'PORT': config('PORT'),  # Default MySQL port
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'ssl': {
+                'ca': f'{BASE_DIR}/DigiCertGlobalRootCA.crt.pem',  # Path to your SSL certificate
+            },
         },
+        
     }
 }
 
