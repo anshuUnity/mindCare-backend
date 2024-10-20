@@ -64,10 +64,27 @@ class UserLoginSerializer(serializers.Serializer):
         return data
     
 class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the UserProfile model.
+    """
+    user = serializers.SerializerMethodField()  # This adds user details to the profile
+
     class Meta:
         model = UserProfile
-        fields = ['date_of_birth', 'gender', 'phone_number', 'profile_picture', 'bio']
+        fields = ['user', 'date_of_birth', 'gender', 'phone_number', 'profile_picture', 'bio']
         read_only_fields = ['user']
+
+    def get_user(self, obj):
+        """
+        Method to serialize related user fields in the profile.
+        """
+        user = obj.user
+        return {
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+        }
+
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

@@ -26,7 +26,7 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG")
 
-ALLOWED_HOSTS = ['mindcareapp-fgbfb5gmgcbbakg8.canadacentral-01.azurewebsites.net']
+ALLOWED_HOSTS = ['mindcareapp-fgbfb5gmgcbbakg8.canadacentral-01.azurewebsites.net', '127.0.0.1']
 
 
 # Application definition
