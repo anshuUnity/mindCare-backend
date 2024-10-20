@@ -67,18 +67,30 @@ class UserLoginView(APIView):
         """
         Handles POST requests to authenticate a user and return a JWT.
         
-        Parameters:
-        - request: The HTTP request object containing the user's credentials.
-        
         Returns:
-        - A JSON response containing the JWT if authentication is successful, or errors if not.
+        - A JSON response containing the JWT, user details, and user profile if authentication is successful.
         """
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             token = TokenAuthentication.generate_jwt(user)
-            return Response({'token': token}, status=status.HTTP_200_OK)
+
+            # Get the user's profile (assuming there's a OneToOne relationship)
+            try:
+                user_profile = UserProfile.objects.get(user=user)
+            except UserProfile.DoesNotExist:
+                user_profile = None
+
+            # Serialize the user profile
+            profile_serializer = UserProfileSerializer(user_profile)
+
+            return Response({
+                'token': token,
+                'profile': profile_serializer.data
+            }, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class DummyView(APIView):
