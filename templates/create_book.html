@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Book</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+/* Basic Reset */
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h3 {
+            margin-bottom: 20px;
+            color: #424242;
+            text-align: center;
+        }
+
+        label {
+            font-size: 14px;
+            color: #424242;
+        }
+
+        .input-field {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        input[type="url"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus,
+        input[type="file"]:focus,
+        textarea:focus,
+        select:focus {
+            border-color: #42a5f5;
+            outline: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #42a5f5;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #1e88e5;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e0e0e0;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #42a5f5;
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        /* Loader */
+        .loader {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            margin: -50px 0 0 -50px;
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Backdrop */
+        .backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+        }
+
+        /* Alert */
+        .alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            z-index: 10000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert.error {
+            background-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader"></div>
+    <div class="backdrop"></div>
+    <div class="alert">Book saved successfully!</div>
+
+    <div class="container">
+        <h3>Create New Book</h3>
+
+        <form id="book-form" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <!-- Hidden fields to store the URLs of the uploaded files -->
+            <input type="hidden" id="id_cover_image_url" name="cover_image">
+            <input type="hidden" id="id_file_url" name="file">
+
+            <div class="input-field">
+                <label for="cover-image">Cover Image:</label>
+                <input type="file" id="cover-image" name="cover-image">
+                <div class="progress" id="cover-image-progress">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="input-field">
+                <label for="book-file">Book File:</label>
+                <input type="file" id="book-file" name="book-file">
+                <div class="progress" id="book-file-progress">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+
+            <button class="btn" type="submit">Save Book</button>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            function uploadFile(file, fileType, progressId, hiddenInputId) {
+                // Generate unique file name
+                function generateUUID() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+
+                var timestamp = new Date().toISOString().replace(/[-:.]/g, "");
+                var uuid = generateUUID();
+                var newFileName = `${uuid}_${timestamp}_${file.name}`;
+                var formData = new FormData();
+                formData.append('blob_name', newFileName);
+                formData.append('file_type', fileType);
+
+                $.ajax({
+                    url: '{% url "upload-file" %}',
+                    type: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        var sasUrl = data.url;
+                        var progressElement = $(progressId);
+                        var progressBar = progressElement.find('.progress-bar');
+                        progressElement.show();
+
+                        // Upload file directly to Azure Blob Storage
+                        var xhr = new XMLHttpRequest();
+                        xhr.open('PUT', sasUrl, true);
+                        xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+
+                        xhr.upload.addEventListener('progress', function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = (evt.loaded / evt.total) * 100;
+                                progressBar.css('width', percentComplete + '%');
+                            }
+                        }, false);
+
+                        xhr.onload = function () {
+                            if (xhr.status === 201 || xhr.status === 200) {
+                                $(hiddenInputId).val(sasUrl.split("?")[0]); // Save file URL
+                            }
+                        };
+
+                        xhr.onerror = function () {
+                            console.error("File upload failed.");
+                        };
+
+                        xhr.send(file);
+                    },
+                    error: function () {
+                        console.error("SAS token generation failed.");
+                    }
+                });
+            }
+
+            $('#cover-image').change(function (event) {
+                uploadFile(event.target.files[0], 'image', '#cover-image-progress', '#id_cover_image_url');
+            });
+
+            $('#book-file').change(function (event) {
+                uploadFile(event.target.files[0], 'file', '#book-file-progress', '#id_file_url');
+            });
+
+            $('#book-form').on('submit', function (event) {
+                event.preventDefault();
+
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    url: '{% url "create-book" %}',
+                    type: 'POST',
+                    data: formData,
+                    success: function () {
+                        $('.alert').text("Book saved successfully!").fadeIn();
+                        $('#book-form')[0].reset();
+                    },
+                    error: function () {
+                        $('.alert').text("Failed to save book.").fadeIn();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

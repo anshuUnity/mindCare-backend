@@ -5,7 +5,11 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 import logging
 
+
 def upload_file_to_azure(file, container_name, content_type):
+    """
+    General function to upload a file to Azure Blob Storage.
+    """
     try:
         # Initialize the BlobServiceClient
         blob_service_client = BlobServiceClient.from_connection_string(settings.AZURE_CONNECTION_STRING)
@@ -29,20 +33,29 @@ def upload_file_to_azure(file, container_name, content_type):
 
     except Exception as e:
         # Log the exception and raise a validation error
-        # Assuming logging is set up correctly
         logging.exception("Failed to upload file to Azure Blob Storage")
         raise ValidationError(f"Failed to upload file: {str(e)}")
 
-# Example usage for image file
+
+# Example usage for image files
 def upload_image(file):
     if not file.content_type.startswith('image/'):
         raise ValidationError("File is not an image.")
     
     return upload_file_to_azure(file, container_name='mindcare-thumbnail', content_type=file.content_type)
 
-# Example usage for audio file
+
+# Example usage for video files
 def upload_video(file):
     if not file.content_type.startswith('video/'):
-        raise ValidationError("File is not a Video file.")
+        raise ValidationError("File is not a video file.")
     
     return upload_file_to_azure(file, container_name='mindcare-video', content_type=file.content_type)
+
+
+# Example usage for PDF files
+def upload_pdf(file):
+    if file.content_type != 'application/pdf':
+        raise ValidationError("File is not a valid PDF.")
+    
+    return upload_file_to_azure(file, container_name='mindcare-pdf', content_type=file.content_type)
