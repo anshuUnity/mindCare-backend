@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "accounts",
     "therapist",
     "chat_bot",
+    "books"
 ]
 
 MIDDLEWARE = [
@@ -74,7 +75,9 @@ CORS_ALLOW_METHODS = [
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / "templates"
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -122,6 +125,7 @@ DATABASES = {
 }
 
 AZURE_CONNECTION_STRING = config('AZURE_CONNECTION_STRING')
+AZURE_ACCOUNT_KEY = config('AZURE_ACCOUNT_KEY')
 OPENAI_API_KEY=config("OPENAI_API_KEY")
 
 # Password validation
