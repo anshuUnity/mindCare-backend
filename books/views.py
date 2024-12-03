@@ -5,6 +5,24 @@ from datetime import datetime, timedelta
 from django.conf import settings
 import logging
 from django.shortcuts import render
+from rest_framework.generics import ListAPIView
+from .models import Book
+from .serializers import BookSerializer
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+
+
+class BookPagination(PageNumberPagination):
+    page_size = 10  # Items per page
+    page_size_query_param = 'page_size'  
+    max_page_size = 100  
+
+class BookListAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    pagination_class = BookPagination  # Use the custom paginator
+
 
 
 def create_book(request):
