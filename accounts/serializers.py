@@ -75,10 +75,13 @@ class ConcernSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
-    Serializer for the UserProfile model, including nested concerns.
+    Serializer for the UserProfile model, including nested concerns and related user updates.
     """
     user = serializers.SerializerMethodField()  # Adds user details to the profile
-    concerns = ConcernSerializer(many=True, read_only=True)  # Nested serializer for read operations
+    first_name = serializers.CharField(write_only=True, required=False)  # Writable first_name
+    last_name = serializers.CharField(write_only=True, required=False)   # Writable last_name
+    email = serializers.EmailField(write_only=True, required=False)      # Writable email
+    concerns = ConcernSerializer(many=True, read_only=True)              # Nested serializer for read operations
     concern_ids = serializers.PrimaryKeyRelatedField(
         queryset=Concern.objects.all(),
         many=True,
@@ -89,8 +92,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'user', 'date_of_birth', 'gender', 'phone_number', 'profile_picture', 
-            'bio', 'concerns', 'concern_ids'
+            'user', 'first_name', 'last_name', 'email', 'date_of_birth', 'gender', 
+            'phone_number', 'profile_picture', 'bio', 'concerns', 'concern_ids'
         ]
         read_only_fields = ['user']
 
@@ -107,14 +110,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Override the update method to handle concern_ids.
+        Override the update method to handle user updates and concern_ids.
         """
+        # Extract related user fields
+        user_data = {
+            'first_name': validated_data.pop('first_name', None),
+            'last_name': validated_data.pop('last_name', None),
+            'email': validated_data.pop('email', None),
+        }
+        # Update related user fields if provided
+        for attr, value in user_data.items():
+            if value is not None:
+                setattr(instance.user, attr, value)
+        instance.user.save()
+
+        # Update concern_ids if provided
         concern_ids = validated_data.pop('concern_ids', None)
         if concern_ids is not None:
             instance.concerns.set(concern_ids)  # Update ManyToMany relationship
+
+        # Update other UserProfile fields
         return super().update(instance, validated_data)
-
-
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
