@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
-from .models import UserProfile, PasswordResetOTP
+from .models import UserProfile, PasswordResetOTP, Concern
 import random
 from .Utils import send_email
 from django.contrib.auth import password_validation
@@ -62,21 +62,41 @@ class UserLoginSerializer(serializers.Serializer):
 
         data['user'] = user
         return data
-    
+
+
+class ConcernSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Concern model.
+    """
+    class Meta:
+        model = Concern
+        fields = ['id', 'name']  # Include both ID and name in the serialized output
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """
-    Serializer for the UserProfile model.
+    Serializer for the UserProfile model, including nested concerns.
     """
-    user = serializers.SerializerMethodField()  # This adds user details to the profile
+    user = serializers.SerializerMethodField()  # Adds user details to the profile
+    concerns = ConcernSerializer(many=True, read_only=True)  # Nested serializer for read operations
+    concern_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Concern.objects.all(),
+        many=True,
+        write_only=True,
+        required=False
+    )  # Field to handle updates
 
     class Meta:
         model = UserProfile
-        fields = ['user', 'date_of_birth', 'gender', 'phone_number', 'profile_picture', 'bio']
+        fields = [
+            'user', 'date_of_birth', 'gender', 'phone_number', 'profile_picture', 
+            'bio', 'concerns', 'concern_ids'
+        ]
         read_only_fields = ['user']
 
     def get_user(self, obj):
         """
-        Method to serialize related user fields in the profile.
+        Serialize related user fields in the profile.
         """
         user = obj.user
         return {
@@ -84,6 +104,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'first_name': user.first_name,
             'last_name': user.last_name,
         }
+
+    def update(self, instance, validated_data):
+        """
+        Override the update method to handle concern_ids.
+        """
+        concern_ids = validated_data.pop('concern_ids', None)
+        if concern_ids is not None:
+            instance.concerns.set(concern_ids)  # Update ManyToMany relationship
+        return super().update(instance, validated_data)
+
 
 
 
