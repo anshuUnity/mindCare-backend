@@ -66,6 +66,20 @@ class Token(models.Model):
         return timezone.now() > self.expires_at
     
 
+class Concern(models.Model):
+    """
+    A model to store different types of concerns.
+    """
+    name = models.CharField(_("Concern Name"), max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Concern")
+        verbose_name_plural = _("Concerns")
+        db_table = "concern"
+
 class UserProfile(models.Model):
     """
     A model to store additional information about the user.
@@ -82,6 +96,8 @@ class UserProfile(models.Model):
     phone_number = models.CharField(_("Phone Number"), max_length=15, blank=True)
     profile_picture = models.ImageField(_("Profile Picture"), upload_to='profile_pictures/', blank=True, null=True)
     bio = models.TextField(_("Bio"), blank=True)
+    concerns = models.ManyToManyField(Concern, verbose_name=_("Concerns"), blank=True)
+
 
     def __str__(self):
         return f"{self.user.email}'s profile"
